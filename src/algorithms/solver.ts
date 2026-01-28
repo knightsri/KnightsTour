@@ -1,5 +1,5 @@
 import { Position, SolverMethod } from '../types';
-import { getValidMoves, KNIGHT_MOVES } from '../utils/validation';
+import { getValidMoves, KNIGHT_MOVES, canKnightReach } from '../utils/validation';
 import { isValidPos } from '../utils/chess';
 
 export interface SolverResult {
@@ -7,6 +7,7 @@ export interface SolverResult {
     path: Position[];
     method: SolverMethod;
     backtracks: number;
+    closedTour: boolean;
 }
 
 /**
@@ -65,10 +66,18 @@ function getSortedMoves(current: Position, board: number[][]): Position[] {
 }
 
 /**
+ * Check if a path forms a closed tour (last position can reach first).
+ */
+function isClosedTour(path: Position[]): boolean {
+    if (path.length < 64) return false;
+    return canKnightReach(path[path.length - 1], path[0]);
+}
+
+/**
  * Attempt to solve using pure Warnsdorff with enhanced tie-breaking.
  * Returns the path if successful, or partial path if stuck.
  */
-function solveWarnsdorff(start: Position): { path: Position[]; complete: boolean } {
+function solveWarnsdorff(start: Position, requireClosed: boolean = false): { path: Position[]; complete: boolean } {
     const board: number[][] = Array(8).fill(null).map(() => Array(8).fill(-1));
     const path: Position[] = [start];
 
@@ -76,7 +85,15 @@ function solveWarnsdorff(start: Position): { path: Position[]; complete: boolean
     let current = start;
 
     for (let moveNum = 2; moveNum <= 64; moveNum++) {
-        const sortedMoves = getSortedMoves(current, board);
+        let sortedMoves = getSortedMoves(current, board);
+
+        // For closed tour on move 64, prefer moves that can reach start
+        if (requireClosed && moveNum === 64) {
+            const closingMoves = sortedMoves.filter(m => canKnightReach(m, start));
+            if (closingMoves.length > 0) {
+                sortedMoves = closingMoves;
+            }
+        }
 
         if (sortedMoves.length === 0) {
             return { path, complete: false };
@@ -88,7 +105,8 @@ function solveWarnsdorff(start: Position): { path: Position[]; complete: boolean
         current = nextMove;
     }
 
-    return { path, complete: true };
+    const complete = requireClosed ? isClosedTour(path) : true;
+    return { path, complete };
 }
 
 /**
@@ -97,8 +115,11 @@ function solveWarnsdorff(start: Position): { path: Position[]; complete: boolean
  */
 function solveWithBacktracking(
     initialPath: Position[],
+    requireClosed: boolean = false,
     maxBacktracks: number = 100000
 ): { path: Position[]; complete: boolean; backtracks: number } {
+    const start = initialPath[0];
+
     // Rebuild board state from initial path
     const board: number[][] = Array(8).fill(null).map(() => Array(8).fill(-1));
     for (let i = 0; i < initialPath.length; i++) {
@@ -157,7 +178,16 @@ function solveWithBacktracking(
             let success = true;
 
             while (newPath.length < 64) {
-                const moves = getSortedMoves(current, newBoard);
+                let moves = getSortedMoves(current, newBoard);
+
+                // For closed tour on move 64, prefer moves that can reach start
+                if (requireClosed && newPath.length === 63) {
+                    const closingMoves = moves.filter(m => canKnightReach(m, start));
+                    if (closingMoves.length > 0) {
+                        moves = closingMoves;
+                    }
+                }
+
                 if (moves.length === 0) {
                     success = false;
                     break;
@@ -168,14 +198,15 @@ function solveWithBacktracking(
                 current = next;
             }
 
-            if (success && newPath.length === 64) {
+            const isClosed = requireClosed ? isClosedTour(newPath) : true;
+            if (success && newPath.length === 64 && isClosed) {
                 return { path: newPath, complete: true, backtracks };
             }
         }
     }
 
     // If simple backtracking didn't work, try full DFS
-    return fullDFS(initialPath[0], maxBacktracks - backtracks, backtracks);
+    return fullDFS(initialPath[0], requireClosed, maxBacktracks - backtracks, backtracks);
 }
 
 /**
@@ -183,6 +214,7 @@ function solveWithBacktracking(
  */
 function fullDFS(
     start: Position,
+    requireClosed: boolean,
     maxIterations: number,
     initialBacktracks: number
 ): { path: Position[]; complete: boolean; backtracks: number } {
@@ -220,52 +252,72 @@ function fullDFS(
         path.push(nextMove);
 
         if (path.length < 64) {
-            moveStack.push(getSortedMoves(nextMove, board));
+            // For move 63 (about to be 64), filter for closing moves if needed
+            let nextMoves = getSortedMoves(nextMove, board);
+            if (requireClosed && path.length === 63) {
+                const closingMoves = nextMoves.filter(m => canKnightReach(m, start));
+                if (closingMoves.length > 0) {
+                    nextMoves = closingMoves;
+                }
+            }
+            moveStack.push(nextMoves);
+        } else if (requireClosed && !canKnightReach(nextMove, start)) {
+            // We completed 64 moves but can't close the tour - backtrack
+            const removed = path.pop()!;
+            board[removed[0]][removed[1]] = -1;
+            backtracks++;
+            continue;
         }
     }
 
+    const complete = path.length === 64 && (requireClosed ? isClosedTour(path) : true);
     return {
         path,
-        complete: path.length === 64,
+        complete,
         backtracks
     };
 }
 
 /**
  * Main solver function: tries Warnsdorff first, falls back to backtracking.
+ * @param start - Starting position
+ * @param closedTour - If true, require the tour to return to the starting position
  */
-export function solveKnightsTour(start: Position): SolverResult {
+export function solveKnightsTour(start: Position, closedTour: boolean = false): SolverResult {
     // Phase 1: Try enhanced Warnsdorff
-    const warnsdorffResult = solveWarnsdorff(start);
+    const warnsdorffResult = solveWarnsdorff(start, closedTour);
 
     if (warnsdorffResult.complete) {
         return {
             success: true,
             path: warnsdorffResult.path,
             method: 'warnsdorff',
-            backtracks: 0
+            backtracks: 0,
+            closedTour: closedTour && isClosedTour(warnsdorffResult.path)
         };
     }
 
     // Phase 2: Backtracking from stuck position
-    const backtrackResult = solveWithBacktracking(warnsdorffResult.path);
+    const backtrackResult = solveWithBacktracking(warnsdorffResult.path, closedTour);
 
     if (backtrackResult.complete) {
         return {
             success: true,
             path: backtrackResult.path,
             method: 'hybrid',
-            backtracks: backtrackResult.backtracks
+            backtracks: backtrackResult.backtracks,
+            closedTour: closedTour && isClosedTour(backtrackResult.path)
         };
     }
 
     // Phase 3: Full DFS if partial backtracking failed
-    const dfsResult = fullDFS(start, 500000, 0);
+    const dfsResult = fullDFS(start, closedTour, 500000, 0);
 
     return {
         success: dfsResult.complete,
         path: dfsResult.path,
         method: 'hybrid',
-        backtracks: dfsResult.backtracks
+        backtracks: dfsResult.backtracks,
+        closedTour: closedTour && isClosedTour(dfsResult.path)
     };
 }

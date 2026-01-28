@@ -21,6 +21,7 @@ export const useGameStore = create<GameState>((set) => ({
         animationSpeed: 500,
         showPath: true,
         showHints: true,
+        closedTour: false,
     },
 
     setMode: (mode) => set({ mode }),
@@ -71,10 +72,20 @@ export const useGameStore = create<GameState>((set) => ({
 
         const moveNum = state.moveHistory.length + 1;
         const newBoard = [...state.board.map(row => [...row])];
-        newBoard[to[0]][to[1]] = moveNum;
+
+        // For closed tour's 65th move (returning to start), don't update board
+        // since the start square is already marked with move 1
+        const isClosingMove = state.settings.closedTour && moveNum === 65;
+        if (!isClosingMove) {
+            newBoard[to[0]][to[1]] = moveNum;
+        }
 
         const from = state.knightPosition;
         const notation = `${toAlgebraic(from)}→${toAlgebraic(to)}`; // Simple notation
+
+        // Determine completion: 64 for open tour, 65 for closed tour
+        const targetMoves = state.settings.closedTour ? 65 : 64;
+        const isSolved = moveNum === targetMoves;
 
         return {
             board: newBoard,
@@ -85,9 +96,8 @@ export const useGameStore = create<GameState>((set) => ({
                 to,
                 notation
             }],
-            // Check completion
-            status: state.moveHistory.length + 1 === 64 ? 'solved' : state.status,
-            stats: state.moveHistory.length + 1 === 64
+            status: isSolved ? 'solved' : state.status,
+            stats: isSolved
                 ? { ...state.stats, endTime: Date.now() }
                 : state.stats
         };

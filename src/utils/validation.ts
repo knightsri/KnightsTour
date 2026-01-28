@@ -26,3 +26,12 @@ export const getValidMoves = (current: Position, board: number[][]): Position[] 
 export const isTourComplete = (board: number[][]): boolean => {
     return board.every(col => col.every(cell => cell !== -1));
 };
+
+/**
+ * Check if position `from` can reach position `to` via a single knight move.
+ */
+export const canKnightReach = (from: Position, to: Position): boolean => {
+    const dx = Math.abs(from[0] - to[0]);
+    const dy = Math.abs(from[1] - to[1]);
+    return (dx === 1 && dy === 2) || (dx === 2 && dy === 1);
+};

@@ -2,11 +2,12 @@ import { useGameStore } from '../store/gameStore';
 import { useState, useEffect } from 'react';
 
 export const Stats = () => {
-    const { moveHistory, status, mode, stats } = useGameStore();
+    const { moveHistory, status, mode, stats, settings } = useGameStore();
     const [elapsed, setElapsed] = useState(0);
 
     const moveCount = moveHistory.length;
-    const progress = Math.round((moveCount / 64) * 100);
+    const targetMoves = settings.closedTour ? 65 : 64;
+    const progress = Math.round((moveCount / targetMoves) * 100);
 
     // Update elapsed time every 100ms while playing
     useEffect(() => {
@@ -41,7 +42,7 @@ export const Stats = () => {
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-husain-bg p-3 rounded border border-husain-earth/20">
                     <div className="text-xs text-husain-canvas/50 uppercase tracking-wider">Moves</div>
-                    <div className="text-2xl font-mono text-husain-canvas">{moveCount} <span className="text-husain-canvas/40 text-lg">/ 64</span></div>
+                    <div className="text-2xl font-mono text-husain-canvas">{moveCount} <span className="text-husain-canvas/40 text-lg">/ {targetMoves}</span></div>
                 </div>
                 <div className="bg-husain-bg p-3 rounded border border-husain-earth/20">
                     <div className="text-xs text-husain-canvas/50 uppercase tracking-wider">Time</div>

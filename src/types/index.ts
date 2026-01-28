@@ -21,6 +21,7 @@ export interface GameSettings {
     animationSpeed: number; // ms per move
     showPath: boolean;
     showHints: boolean;
+    closedTour: boolean; // Require returning to start (65 moves)
 }
 
 export interface GameState {

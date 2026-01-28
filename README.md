@@ -9,6 +9,7 @@ A browser-based application that visualizes the Knight's Tour problem with both 
 
 - **Auto-Solve Mode**: Hybrid solver using Warnsdorff's heuristic with Pohl's tie-breaker, plus backtracking fallback for 100% success from any starting square.
 - **Manual Mode**: Try to visit all 64 squares yourself. Includes valid move highlighting and "stuck" detection.
+- **Closed Tour Option**: Enable to require returning to the starting square (65 moves total), forming a complete circuit.
 - **Visual Path Trace**: A dynamic line traces the knight's journey, making it easy to see the path taken.
 - **Move History**: Scrollable history panel tracks every jump in algebraic notation.
 - **Statistics**: Live timer, move counter, solver method display, and backtrack count.

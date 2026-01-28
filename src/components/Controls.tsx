@@ -78,9 +78,24 @@ export const Controls = () => {
                 )}
             </div>
 
+            {/* Closed Tour Toggle */}
+            <div className="flex items-center gap-2 mt-2">
+                <input
+                    type="checkbox"
+                    id="closedTour"
+                    checked={settings.closedTour}
+                    onChange={(e) => updateSettings({ closedTour: e.target.checked })}
+                    disabled={status === 'playing' || status === 'solved' || status === 'stuck'}
+                    className="w-4 h-4 accent-husain-saffron rounded disabled:opacity-50"
+                />
+                <label htmlFor="closedTour" className="text-sm text-husain-canvas/80 cursor-pointer">
+                    Closed tour (return to start)
+                </label>
+            </div>
+
             {/* Hints Toggle (Manual) */}
             {mode === 'manual' && (
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2">
                     <input
                         type="checkbox"
                         id="hints"
