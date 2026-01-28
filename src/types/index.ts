@@ -7,11 +7,14 @@ export interface Move {
     notation: string;
 }
 
+export type SolverMethod = 'none' | 'warnsdorff' | 'hybrid';
+
 export interface GameStats {
     startTime: number;
     endTime: number | null;
     backtracks: number;
     algorithmSteps: number;
+    solverMethod: SolverMethod;
 }
 
 export interface GameSettings {
@@ -41,4 +44,5 @@ export interface GameState {
     addToHistory: (move: Move) => void;
     incrementBacktracks: () => void;
     incrementAlgorithmSteps: () => void;
+    setSolverStats: (method: SolverMethod, backtracks: number) => void;
 }

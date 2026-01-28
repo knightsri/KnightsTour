@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GameState, Position, Move } from '../types';
+import { GameState, Position, Move, SolverMethod } from '../types';
 import { toAlgebraic } from '../utils/chess';
 
 const createEmptyBoard = () => Array(8).fill(null).map(() => Array(8).fill(-1));
@@ -15,6 +15,7 @@ export const useGameStore = create<GameState>((set) => ({
         endTime: null,
         backtracks: 0,
         algorithmSteps: 0,
+        solverMethod: 'none' as SolverMethod,
     },
     settings: {
         animationSpeed: 500,
@@ -43,6 +44,7 @@ export const useGameStore = create<GameState>((set) => ({
                 endTime: null,
                 backtracks: 0,
                 algorithmSteps: 0,
+                solverMethod: 'none' as SolverMethod,
             }
         };
     }),
@@ -57,6 +59,7 @@ export const useGameStore = create<GameState>((set) => ({
             endTime: null,
             backtracks: 0,
             algorithmSteps: 0,
+            solverMethod: 'none' as SolverMethod,
         }
     }),
 
@@ -106,4 +109,7 @@ export const useGameStore = create<GameState>((set) => ({
     addToHistory: (move: Move) => set((state) => ({ moveHistory: [...state.moveHistory, move] })),
     incrementBacktracks: () => set((state) => ({ stats: { ...state.stats, backtracks: state.stats.backtracks + 1 } })),
     incrementAlgorithmSteps: () => set((state) => ({ stats: { ...state.stats, algorithmSteps: state.stats.algorithmSteps + 1 } })),
+    setSolverStats: (method: SolverMethod, backtracks: number) => set((state) => ({
+        stats: { ...state.stats, solverMethod: method, backtracks }
+    })),
 }));

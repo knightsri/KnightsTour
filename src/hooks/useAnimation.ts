@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { solveKnightsTour, SolverResult } from '../algorithms/solver';
+import { Position } from '../types';
 
 export const useAnimation = () => {
     const {
@@ -8,44 +10,65 @@ export const useAnimation = () => {
         settings,
         makeMove,
         knightPosition,
-        board
+        setStatus,
+        setSolverStats,
+        moveHistory
     } = useGameStore();
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const solutionRef = useRef<Position[] | null>(null);
+    const moveIndexRef = useRef<number>(1); // Start at 1 since position 0 is the starting square
 
     useEffect(() => {
-        if (status === 'playing' && mode === 'auto') {
-            import('../algorithms/warnsdorff').then(({ getBestMove }) => {
-                timerRef.current = setInterval(() => {
-                    if (!knightPosition) return;
+        // Compute solution when auto mode starts playing
+        if (status === 'playing' && mode === 'auto' && knightPosition && moveHistory.length === 1) {
+            const result: SolverResult = solveKnightsTour(knightPosition);
 
-                    const nextMove = getBestMove(knightPosition, board);
+            if (result.success) {
+                solutionRef.current = result.path;
+                moveIndexRef.current = 1; // Skip the starting position
+                setSolverStats(result.method, result.backtracks);
+            } else {
+                // Solver failed completely
+                setStatus('failed');
+                setSolverStats(result.method, result.backtracks);
+                return;
+            }
+        }
 
-                    if (nextMove) {
-                        makeMove(nextMove);
-                    } else {
-                        // If no moves, check if solved
-                        // This logic is simple; the store updates status on the 64th move
-                        // But if we are stuck before 64, we need to handle it.
-                        // The store check handles 'solved'. If we run out of moves here and not solved...
-                        // We'll let the next tick handle it or update store to 'stuck' separately? 
-                        // For now, let's rely on the store 'solved' check which happens inside makeMove.
-                        // If we get here and no move, it's either done or stuck.
+        // Animate through pre-computed solution
+        if (status === 'playing' && mode === 'auto' && solutionRef.current) {
+            timerRef.current = setInterval(() => {
+                const solution = solutionRef.current;
+                const currentIndex = moveIndexRef.current;
 
-                        // Let's explicitly check:
-                        const isDone = useGameStore.getState().status === 'solved'; // check fresh state
-                        if (!isDone) {
-                            useGameStore.getState().setStatus('stuck');
-                        }
+                if (!solution || currentIndex >= solution.length) {
+                    // Animation complete
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    return;
+                }
 
-                        if (timerRef.current) clearInterval(timerRef.current);
-                    }
-                }, settings.animationSpeed);
-            });
+                const nextMove = solution[currentIndex];
+                makeMove(nextMove);
+                moveIndexRef.current = currentIndex + 1;
+
+                // Check if we've completed the tour
+                if (currentIndex + 1 >= 64) {
+                    if (timerRef.current) clearInterval(timerRef.current);
+                }
+            }, settings.animationSpeed);
         }
 
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [status, mode, settings.animationSpeed, knightPosition, board, makeMove]);
+    }, [status, mode, settings.animationSpeed, knightPosition, moveHistory.length, makeMove, setStatus, setSolverStats]);
+
+    // Reset solution when game resets
+    useEffect(() => {
+        if (status === 'setup') {
+            solutionRef.current = null;
+            moveIndexRef.current = 1;
+        }
+    }, [status]);
 };

@@ -67,6 +67,25 @@ export const Stats = () => {
                 />
             </div>
 
+            {/* Solver method and backtracks for auto mode */}
+            {mode === 'auto' && stats.solverMethod !== 'none' && (
+                <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-husain-canvas/50">Method:</span>
+                        <span className={stats.solverMethod === 'warnsdorff' ? 'text-emerald-400' : 'text-husain-saffron'}>
+                            {stats.solverMethod === 'warnsdorff' ? 'Warnsdorff' : 'Warnsdorff + Backtracking'}
+                        </span>
+                    </div>
+                    {stats.backtracks > 0 && (
+                        <div className="flex justify-between">
+                            <span className="text-husain-canvas/50">Backtracks:</span>
+                            <span className="text-husain-saffron">{stats.backtracks.toLocaleString()}</span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Backtracks for manual mode */}
             {mode === 'manual' && stats.backtracks > 0 && (
                 <div className="text-sm text-husain-saffron">Backtracks: {stats.backtracks}</div>
             )}

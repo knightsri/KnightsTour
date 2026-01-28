@@ -2,10 +2,6 @@
 
 ## Missing Files (Specified in CLAUDE.md)
 
-- [ ] **`src/algorithms/backtrack.ts`** - Fallback algorithm with pruning
-  - Warnsdorff has ~99.9% success rate, but rare failures have no recovery
-  - Implement depth-first search with backtracking as fallback
-
 - [ ] **`src/components/Knight.tsx`** - Dedicated animated knight component
   - Currently knight (♞) is rendered directly in Square.tsx
   - Could extract for better separation of concerns
@@ -18,10 +14,7 @@
 
 ### Critical
 
-- [ ] **Inefficient dynamic import** in `useAnimation.ts:12`
-  - `import('../algorithms/warnsdorff')` happens inside `setInterval`
-  - Causes repeated module resolution every animation frame
-  - Fix: Move import to top of file or use static import
+(No critical issues remaining)
 
 ### Major
 
@@ -62,3 +55,9 @@
 ## Completed
 
 - [x] Add time elapsed tracking and display in Stats component
+- [x] Implement hybrid solver with Warnsdorff + backtracking fallback (`src/algorithms/solver.ts`)
+- [x] Add Pohl's tie-breaker to Warnsdorff (prefer corners/edges)
+- [x] Display solver method (Warnsdorff vs Hybrid) in Stats
+- [x] Display backtrack count in Stats
+- [x] Fix dynamic import issue (pre-compute solution path, static imports)
+- [x] Pre-compute full solution path for smoother animation
