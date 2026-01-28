@@ -7,10 +7,11 @@ A browser-based application that visualizes the Knight's Tour problem with both 
 
 ## ✨ Features
 
-- **Auto-Solve Mode**: Watch Warnsdorff's algorithm solve the tour in real-time.
+- **Auto-Solve Mode**: Hybrid solver using Warnsdorff's heuristic with Pohl's tie-breaker, plus backtracking fallback for 100% success from any starting square.
 - **Manual Mode**: Try to visit all 64 squares yourself. Includes valid move highlighting and "stuck" detection.
 - **Visual Path Trace**: A dynamic line traces the knight's journey, making it easy to see the path taken.
 - **Move History**: Scrollable history panel tracks every jump in algebraic notation.
+- **Statistics**: Live timer, move counter, solver method display, and backtrack count.
 - **Responsive Design**: Polished, responsive UI with glassmorphism effects that works on desktop and mobile.
 - **Dockerized**: Fully containerized setup - no local Node.js environment required.
 
